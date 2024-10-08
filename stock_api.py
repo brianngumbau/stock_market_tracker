@@ -1,27 +1,31 @@
 import requests
 # from polygon import RESTClient
+import yfinance as yf
 from datetime import datetime
 
-API_KEY = "KPLKMjstKCqFHRi9tZUE1OshfYardCEt"
-BASE_URL = "https://api.polygon.io"
+# API_KEY = "KPLKMjstKCqFHRi9tZUE1OshfYardCEt"
+# BASE_URL = "https://api.polygon.io"
 # client = RESTClient(API_KEY)
 
-
-stock_data = []
 date = datetime.now().strftime("%Y-%m-%d")
 def get_stock_data(symbol):
-    OPEN_CLOSE_URL = f"{BASE_URL}/v1/open-close/{symbol}/{date}"
-    params = {
-        "adjusted": "true",
-        "apikey": API_KEY
-    }
     try:
-        open_response = requests.get(OPEN_CLOSE_URL, params=params)
-        if open_response.status_code == 200:
-            print("Response Data:", open_response.json())
+        stock = yf.Ticker(symbol)
+        stock_info = stock.info
+        # stock_data = stock.history(period="1d")
+        if stock_info:
+            return {
+                'symbol': stock_info['symbol'],
+                'company_name': stock_info.get('shortName', 'N/A'),
+                'open': stock_info.get('open', 'N/A'),
+                'close': stock_info.get('previousClose', 'N/A'),
+                'high': stock_info.get('dayHigh', 'N/A'),
+                'low': stock_info.get('dayLow', 'N/A'),
+                'volume': stock_info.get('volume', 'N/A'),
+            }
         else:
-            print(f"Error {open_response.status_code}: {open_response.text}")
+            return {'error': 'No data available for this symbol'}
     except Exception as e:
-        print(e)
+        print(f"Error fetching stock data: {e}")
 
-get_stock_data("AAPL")
+# print(get_stock_data('AAPL'))
