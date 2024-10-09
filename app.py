@@ -1,20 +1,32 @@
-from flask import Flask, jsonify, request, render_template, redirect, url_for, flash
-from pymongo import MongoClient
+from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, session
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 from stock_api import get_stock_data
 from dotenv import load_dotenv
 import os
 from forms import RegistrationForm, LoginForm
 import bcrypt
 
-load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
-client = MongoClient(os.getenv("MONGO_URI"))
+client = MongoClient(os.getenv("MONGO_URI"), server_api=ServerApi('1'), tls=True, tlsAllowInvalidCertificates=True)
+try:
+    client.admin.command('ping')
+    print("Pinged your deployment. You successfully connected to MongoDB!")
+except Exception as e:
+    print(e)
+
+
 db = client['stock_market_tracker']
 stocks_collection = db['stocks']
 users_collection = db['users']
+
+def is_logged_in():
+    return 'user_id' in session
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -37,15 +49,27 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = users_collection.find_one({"email": form.email.data})
-        if user and bcrypt.checkpw(form.password.data.encode('utf-8'), user['password'].encode('utf-8')):
-            flash('Login successful!', 'success')
-            return redirect(url_for('home'))
+        if user:
+            if bcrypt.checkpw(form.password.data.encode('utf-8'), user['password'].encode('utf-8')):
+                session['user_id'] = str(user['_id'])
+                flash('Login successful!', 'success')
+                return redirect(url_for('home'))
+            else:
+                flash('Incorrect password. Please try again.', 'danger')
         else:
-            flash('Login unsuccessful. Please check your email and password', 'danger')
+            flash('Email not registered. Please sign up.', 'danger')
     return render_template('login.html', form=form)
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.pop('user_id', None)
+    flash('You have logged out.', 'success')
+    return redirect(url_for('login'))
 
 @app.route('/')
 def home():
+    if not is_logged_in():
+        return redirect(url_for('login'))
     return render_template('home.html')
 
 
