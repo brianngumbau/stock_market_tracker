@@ -36,7 +36,8 @@ def register():
         user_data = {
             "username": form.username.data,
             "email": form.email.data,
-            "password": hashed_password.decode('utf-8')
+            "password": hashed_password.decode('utf-8'),
+            "watchlist": []
         }
         users_collection.insert_one(user_data)
         flash("Your account has been created!", 'success')
@@ -60,11 +61,13 @@ def login():
             flash('Email not registered. Please sign up.', 'danger')
     return render_template('login.html', form=form)
 
+
 @app.route('/logout', methods=['POST'])
 def logout():
     session.pop('user_id', None)
     flash('You have logged out.', 'success')
     return redirect(url_for('login'))
+
 
 @app.route('/')
 def home():
@@ -81,6 +84,61 @@ def search_stock():
         return render_template('home.html', stock_data=stock_data)
     else:
         return render_template('home.html', error="No data found for the symbol")
+
+
+@app.route('/add_to_watchlist', methods=['POST'])
+def add_to_watchlist():
+    if not is_logged_in():
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    stock_data = {
+            "symbol": request.form.get('symbol'),
+            "company_name": request.form.get('company_name'),
+            "open": request.form.get('open'),
+            "close": request.form.get('close'),
+            "high": request.form.get('high'),
+            "low": request.form.get('low'),
+            "volume": request.form.get('volume')
+        }
+    
+    users_collection.update_one(
+        {"_id": user_id},
+        {"$addToSet": {"watchlist": stock_data}}
+    )
+    flash(f"Stock {stock_data['symbol']} has been added to your watchlist!", 'success')
+    return redirect(url_for('home'))
+
+@app.route('/watchlist', methods=['GET'])
+def watchlist():
+    if not is_logged_in():
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    user = users_collection.find_one({"_id": user_id})
+
+    if user and "watchlist" in user:
+        watchlist = user["watchlist"]
+    else:
+        watchlist = []
+
+    return render_template('watchlist.html', watchlist=watchlist)
+
+@app.route('/remove', methods=['POST'])
+def remove_from_watchlist():
+    if not is_logged_in():
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    symbol = request.form.get('symbol')
+
+    users_collection.update_one(
+        {"_id": user_id},
+        {"$pull": {"watchlist": {"symbol": symbol}}}
+    )
+
+    flash(f"Stock {symbol} has been removed from your watchlist.", 'success')
+    return redirect(url_for('watchlist'))
 
 
 if __name__ == "__main__":

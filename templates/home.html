@@ -94,6 +94,18 @@
                         </li>
                     </ul>
                 </div>
+                <div class="card-footer">
+                  <form action="{{ url_for('add_to_watchlist') }}" method="post">
+                      <input type="hidden" name="symbol" value="{{ stock_data['symbol'] }}">
+                      <input type="hidden" name="company_name" value="{{ stock_data['company_name'] }}">
+                      <input type="hidden" name="open" value="{{ stock_data['open'] }}">
+                      <input type="hidden" name="close" value="{{ stock_data['close'] }}">
+                      <input type="hidden" name="high" value="{{ stock_data['high'] }}">
+                      <input type="hidden" name="low" value="{{ stock_data['low'] }}">
+                      <input type="hidden" name="volume" value="{{ stock_data['volume'] }}">
+                      <button type="submit" class="btn btn-primary">Add to Watchlist</button>
+                  </form>
+              </div>
             </div>
         {% elif error %}
             <div class="alert alert-danger mt-3">{{ error }}</div>

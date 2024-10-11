@@ -1,0 +1,37 @@
+/* Customizing the table font size */
+.table td, .table th {
+    font-size: 16px;
+}
+
+/* Add spacing between the table and the header */
+h1 {
+    margin-bottom: 30px;
+}
+
+/* Custom styling for the Remove button */
+.btn-danger {
+    background-color: #d9534f;
+    border-color: #d43f3a;
+}
+
+.btn-danger:hover {
+    background-color: #c9302c;
+    border-color: #ac2925;
+}
+
+/* Customizing the background color */
+body {
+    background-color: #f8f9fa; /* Light gray background */
+}
+
+/* Additional padding for the page */
+.container {
+    padding: 30px;
+}
+
+/* Custom alert style */
+.alert-info {
+    background-color: #d9edf7;
+    border-color: #bce8f1;
+    color: #31708f;
+}
