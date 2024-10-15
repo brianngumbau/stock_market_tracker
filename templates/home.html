@@ -105,6 +105,8 @@
                       <input type="hidden" name="volume" value="{{ stock_data['volume'] }}">
                       <button type="submit" class="btn btn-primary">Add to Watchlist</button>
                   </form>
+
+                  <a href="{{ url_for('view_chart', symbol=stock_data['symbol']) }}" class="btn btn-secondary">View Chart</a>
               </div>
             </div>
         {% elif error %}

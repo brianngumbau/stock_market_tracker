@@ -28,4 +28,17 @@ def get_stock_data(symbol):
     except Exception as e:
         print(f"Error fetching stock data: {e}")
 
-# print(get_stock_data('AAPL'))
+def get_historical_data(symbol, period="1mo"):
+    try:
+        stock = yf.Ticker(symbol)
+        stock_history = stock.history(period=period)
+        if not stock_history.empty:
+            dates = stock_history.index.strftime('%Y-%m-%d').tolist()
+            prices = stock_history['Close'].tolist()
+            return {'dates': dates, 'prices': prices}
+        else:
+            return None
+        
+    except Exception as e:
+        print(f"Error fetching historical data: {e}")
+        return None

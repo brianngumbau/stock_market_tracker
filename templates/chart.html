@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Chart for {{ symbol }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Stock Chart for {{ symbol }}</h1>
+    <canvas id="stockChart"></canvas>
+
+    <script>
+        var ctx = document.getElementById('stockChart').getContext('2d');
+        var stockChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ historical_data.dates|safe }},  // Dates for x-axis
+                datasets: [{
+                    label: 'Stock Price',
+                    data: {{ historical_data.prices|safe }},  // Prices for y-axis
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'Date' } },
+                    y: { title: { display: true, text: 'Price' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

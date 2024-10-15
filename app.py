@@ -1,11 +1,12 @@
 from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, session
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from stock_api import get_stock_data
+from stock_api import get_stock_data, get_historical_data
 from dotenv import load_dotenv
 import os
 from forms import RegistrationForm, LoginForm
 import bcrypt
+from bson import ObjectId
 
 load_dotenv()
 
@@ -102,8 +103,10 @@ def add_to_watchlist():
             "volume": request.form.get('volume')
         }
     
+    print(f"Adding stock for user {user_id}: {stock_data}")
+    
     users_collection.update_one(
-        {"_id": user_id},
+        {"_id": ObjectId(user_id)},
         {"$addToSet": {"watchlist": stock_data}}
     )
     flash(f"Stock {stock_data['symbol']} has been added to your watchlist!", 'success')
@@ -115,17 +118,15 @@ def watchlist():
         return redirect(url_for('login'))
     
     user_id = session['user_id']
-    user = users_collection.find_one({"_id": user_id})
+    user = users_collection.find_one({"_id": ObjectId(user_id)})
+    watchlist = user.get('watchlist', [])
 
-    if user and "watchlist" in user:
-        watchlist = user["watchlist"]
-    else:
-        watchlist = []
+    print(f"Watchlist for user {user_id}: {watchlist}")
 
     return render_template('watchlist.html', watchlist=watchlist)
 
 @app.route('/remove', methods=['POST'])
-def remove_from_watchlist():
+def remove():
     if not is_logged_in():
         return redirect(url_for('login'))
     
@@ -133,13 +134,23 @@ def remove_from_watchlist():
     symbol = request.form.get('symbol')
 
     users_collection.update_one(
-        {"_id": user_id},
+        {"_id": ObjectId(user_id)},
         {"$pull": {"watchlist": {"symbol": symbol}}}
     )
 
     flash(f"Stock {symbol} has been removed from your watchlist.", 'success')
     return redirect(url_for('watchlist'))
 
+@app.route('/view_chart')
+def view_chart():
+    symbol = request.args.get('symbol')
+    historical_data = get_historical_data(symbol)
+
+    if not historical_data:
+        flash(f"Could not fetch chart data for {symbol}", "danger")
+        return redirect(url_for('home'))
+    
+    return render_template('chart.html', symbol=symbol, historical_data=historical_data)
 
 if __name__ == "__main__":
     app.run(debug=True)
