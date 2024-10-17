@@ -34,6 +34,8 @@ def is_logged_in():
 @app.context_processor
 def inject_year():
     return {'current_year': datetime.now().year}
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
@@ -185,11 +187,12 @@ def view_chart():
     symbol = request.args.get('symbol')
     candlestick_data = get_candlestick_data(symbol)
 
-    print(candlestick_data)
     if not candlestick_data:
         flash(f"Could not fetch chart data for {symbol}", "danger")
         return redirect(url_for('home'))
     
+    print(candlestick_data)
+
     return render_template('chart.html', symbol=symbol, candlestick_data=candlestick_data)
 
 if __name__ == "__main__":
