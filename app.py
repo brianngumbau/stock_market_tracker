@@ -1,12 +1,14 @@
 from flask import Flask, jsonify, request, render_template, redirect, url_for, flash, session
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from stock_api import get_stock_data, get_historical_data
+from stock_api import get_stock_data, get_historical_data, get_candlestick_data
 from dotenv import load_dotenv
 import os
 from forms import RegistrationForm, LoginForm
 import bcrypt
 from bson import ObjectId
+import yfinance as yf
+from datetime import datetime
 
 load_dotenv()
 
@@ -29,6 +31,9 @@ def is_logged_in():
     return 'user_id' in session
 
 
+@app.context_processor
+def inject_year():
+    return {'current_year': datetime.now().year}
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
@@ -93,14 +98,20 @@ def add_to_watchlist():
         return redirect(url_for('login'))
     
     user_id = session['user_id']
+    stock_symbol = request.form.get('symbol')
+    stock_info = yf.Ticker(stock_symbol).info
+
     stock_data = {
-            "symbol": request.form.get('symbol'),
+            "symbol": stock_symbol,
             "company_name": request.form.get('company_name'),
             "open": request.form.get('open'),
             "close": request.form.get('close'),
             "high": request.form.get('high'),
             "low": request.form.get('low'),
-            "volume": request.form.get('volume')
+            "volume": request.form.get('volume'),
+            "current_price": stock_info.get('currentPrice', 0),
+            "percent_change": stock_info.get('regularMarketChangePercent', 0),
+            "last_updated": datetime.utcnow()
         }
     
     print(f"Adding stock for user {user_id}: {stock_data}")
@@ -121,7 +132,35 @@ def watchlist():
     user = users_collection.find_one({"_id": ObjectId(user_id)})
     watchlist = user.get('watchlist', [])
 
-    print(f"Watchlist for user {user_id}: {watchlist}")
+    updated_watchlist = []
+
+    for stock in watchlist:
+        symbol = stock['symbol']
+
+        try:
+           stock_info = yf.Ticker(symbol)
+           latest_data = stock_info.history(period="1d").iloc[0]
+
+           current_price = latest_data['Close']
+           previous_close = float(stock.get('close', current_price))
+           percent_change = ((current_price - previous_close) / previous_close) * 100
+
+           stock['current_price'] = round(current_price, 2)
+           stock['percent_change'] = round(percent_change, 2)
+           stock['last_updated'] = datetime.now()
+
+        except Exception as e:
+            print(f"Error updating stock {symbol}: {e}")
+            stock['current_price'] = "N/A"
+            stock['percent_change'] = "N/A"
+            stock['last_updated'] = "N/A"
+
+        updated_watchlist.append(stock)
+
+    users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"watchlist": updated_watchlist}}
+    )
 
     return render_template('watchlist.html', watchlist=watchlist)
 
@@ -144,13 +183,14 @@ def remove():
 @app.route('/view_chart')
 def view_chart():
     symbol = request.args.get('symbol')
-    historical_data = get_historical_data(symbol)
+    candlestick_data = get_candlestick_data(symbol)
 
-    if not historical_data:
+    print(candlestick_data)
+    if not candlestick_data:
         flash(f"Could not fetch chart data for {symbol}", "danger")
         return redirect(url_for('home'))
     
-    return render_template('chart.html', symbol=symbol, historical_data=historical_data)
+    return render_template('chart.html', symbol=symbol, candlestick_data=candlestick_data)
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -22,6 +22,9 @@
                         <th>High</th>
                         <th>Low</th>
                         <th>Volume</th>
+                        <th>Current Price</th>
+                        <th> % Change</th>
+                        <th>Last Updated</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -35,6 +38,9 @@
                         <td>{{ stock.high }}</td>
                         <td>{{ stock.low }}</td>
                         <td>{{ stock.volume }}</td>
+                        <td>{{ stock.current_price }}</td>
+                        <td>{{ stock.percent_change }}%</td>
+                        <td>{{ stock.last_updated.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td>
                             <form action="{{ url_for('remove') }}" method="POST">
                                 <input type="hidden" name="symbol" value="{{ stock.symbol }}">
