@@ -40,19 +40,15 @@
     </div>
 
     <script>
-        // Ensure that candlestick_data is passed from the server
+        // Ensure that candlestick_data is passed from the server correctly
         var stockData = {{ candlestick_data | tojson }};
-
-        // Extract data for plotting
-        var dates = stockData.index;
-        var open = stockData.Open;
-        var close = stockData.Close;
-        var high = stockData.High;
-        var low = stockData.Low;
-        var volume = stockData.Volume;
-
-        // Check if data exists (debugging purposes)
-        console.log(dates, open, close, high, low);
+        
+        // Extract data for plotting from the correct keys
+        var dates = stockData.dates;
+        var open = stockData.opens;
+        var close = stockData.closes;
+        var high = stockData.highs;
+        var low = stockData.lows;
 
         // Initial chart configuration for the 1-year period
         var trace1 = {
@@ -88,7 +84,6 @@
             let filteredClose = close;
             let filteredHigh = high;
             let filteredLow = low;
-            let filteredVolume = volume;
 
             // Logic to filter the data based on the range (assuming 22 trading days per month)
             if (range === '1M') {
@@ -97,28 +92,24 @@
                 filteredClose = close.slice(-22);
                 filteredHigh = high.slice(-22);
                 filteredLow = low.slice(-22);
-                filteredVolume = volume.slice(-22);
             } else if (range === '3M') {
                 filteredDates = dates.slice(-66);  // Last 66 days
                 filteredOpen = open.slice(-66);
                 filteredClose = close.slice(-66);
                 filteredHigh = high.slice(-66);
                 filteredLow = low.slice(-66);
-                filteredVolume = volume.slice(-66);
             } else if (range === '6M') {
                 filteredDates = dates.slice(-132);  // Last 132 days
                 filteredOpen = open.slice(-132);
                 filteredClose = close.slice(-132);
                 filteredHigh = high.slice(-132);
                 filteredLow = low.slice(-132);
-                filteredVolume = volume.slice(-132);
             } else if (range === '1Y') {
                 filteredDates = dates;  // Show all available data for 1 year
                 filteredOpen = open;
                 filteredClose = close;
                 filteredHigh = high;
                 filteredLow = low;
-                filteredVolume = volume;
             }
 
             // Update the chart with filtered data

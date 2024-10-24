@@ -182,7 +182,7 @@ def remove():
     flash(f"Stock {symbol} has been removed from your watchlist.", 'success')
     return redirect(url_for('watchlist'))
 
-@app.route('/view_chart')
+@app.route('/view_chart', methods=['GET'])
 def view_chart():
     symbol = request.args.get('symbol')
     candlestick_data = get_candlestick_data(symbol)
@@ -194,6 +194,10 @@ def view_chart():
     print(candlestick_data)
 
     return render_template('chart.html', symbol=symbol, candlestick_data=candlestick_data)
+
+@app.route('/about', methods=['GET'])
+def about():
+    return render_template('about.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
